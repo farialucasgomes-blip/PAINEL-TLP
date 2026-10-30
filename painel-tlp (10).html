@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel TLP - Gestão Operacional</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--or:#ff7700;--tx:#f8fafc;--mu:#94a3b8;--cd:rgba(15,23,42,.85);--bd:rgba(255,255,255,.1)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body{background:linear-gradient(135deg,#030712,#001d3d);color:var(--tx);min-height:100vh;padding:20px}
+header,.card{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:18px}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 22px}
+.logo{font-weight:900;font-size:28px;background:linear-gradient(135deg,var(--or),#ffb74d,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+nav button{background:rgba(15,23,42,.7);border:1px solid var(--bd);color:var(--mu);padding:11px 20px;border-radius:10px;font-weight:700;cursor:pointer}
+nav button.active{background:var(--or);color:#030712;box-shadow:0 0 15px rgba(255,119,0,.4)}
+.tab{display:none}.tab.active{display:block}
+h3{font-size:15px;color:var(--mu);margin-bottom:12px}
+p.m{color:var(--mu);font-size:13px;margin-bottom:10px}
+input,select,textarea{background:rgba(3,7,18,.6);border:1px solid var(--bd);padding:8px 10px;border-radius:8px;color:var(--tx);font-size:13px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--or)}
+textarea{width:100%;height:110px;resize:vertical;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px}
+.grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--mu);font-weight:600}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn{background:var(--or);color:#030712;border:0;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px}
+.btn:hover{filter:brightness(1.15)}.sm{padding:4px 8px;font-size:11px}
+.b-g{background:#10b981;color:#fff}.b-x{background:#0284c7;color:#fff}.b-r{background:#ef4444;color:#fff}.b-p{background:#8b5cf6;color:#fff}.b-d{background:#334155;color:#fff}
+.tc{overflow:auto;max-height:480px;border:1px solid var(--bd);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#1e293b;color:var(--or);padding:9px 10px;text-align:left;position:sticky;top:0;z-index:2}
+td{padding:5px 8px;border-bottom:1px solid var(--bd);color:var(--mu)}
+tr:hover td{background:rgba(255,119,0,.1);color:var(--tx)}
+.tk{font-weight:700;color:var(--or)}.c{text-align:center}
+.ei{width:100%;padding:4px 6px;font-size:12px;border-radius:4px}
+.pill{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;color:#0b1220;white-space:nowrap}
+.badge{padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700}
+.ok{background:rgba(16,185,129,.2);color:#34d399}.bad{background:rgba(239,68,68,.2);color:#f87171}
+.drop{border:2px dashed rgba(255,119,0,.4);padding:16px;border-radius:12px;text-align:center;cursor:pointer;color:var(--mu);margin-bottom:10px}
+.drop:hover{background:rgba(255,119,0,.1)}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kp div{background:rgba(15,23,42,.6);border:1px solid var(--bd);border-top:3px solid var(--k,#334155);border-radius:10px;padding:14px;text-align:center;font-size:11px;color:var(--mu);text-transform:uppercase}
+.kp b{display:block;font-size:26px;margin-top:4px}.kp small{display:block;font-size:11px;color:var(--mu);text-transform:none;margin-top:2px}
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.cc{height:320px;position:relative}
+.cc canvas{max-height:250px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px}
+.url{background:#030712;border:1px solid var(--or);padding:8px;border-radius:8px;color:#ffb74d;font:12px monospace;word-break:break-all;margin:8px 0}
+#toast{position:fixed;bottom:20px;right:20px;background:#10b981;color:#fff;padding:10px 18px;border-radius:8px;font-weight:700;display:none;z-index:99}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sla{padding:3px 8px;border-radius:8px;font-weight:700;white-space:nowrap;font-size:11px}.sla.ok{background:rgba(16,185,129,.2);color:#34d399}.sla.warn{background:rgba(250,204,21,.2);color:#facc15}.sla.bad{background:#ef4444;color:#fff}
+.blink{animation:bl 1s infinite}@keyframes bl{50%{opacity:.35}}.m0{color:var(--mu)}tr.br td{background:rgba(239,68,68,.12)}
+#hm{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:98}#hm .card{width:min(560px,92vw);max-height:80vh;overflow:auto;margin:0}
+.tl{border-left:3px solid var(--or);padding:4px 0 10px 12px;font-size:13px;color:var(--mu)}.tl b{color:var(--tx)}
+.chip.on{background:var(--or);color:#030712}th.s{cursor:pointer;user-select:none}
+
+#rel{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;z-index:97;overflow:auto;padding:18px}
+#rel *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#rel .tb{width:min(210mm,100%);margin:0 auto 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#rel .pg{background:#fff;color:#0f172a;width:min(210mm,100%);min-height:297mm;margin:0 auto;padding:10mm;font-size:11px;line-height:1.35;display:flex;flex-direction:column;gap:9px}
+#rel .rhd{background:#1e293b;color:#fff;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+#rel .rhd h1{font-size:17px;color:#ff7700;margin:0}#rel .rhd small{color:#cbd5e1;font-size:10.5px;text-align:right}
+#rel .rkg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+#rel .rk{border:1px solid #e2e8f0;border-left:4px solid #ff7700;border-radius:6px;padding:6px 8px;display:flex;flex-direction:column}
+#rel .rk span{font-size:9.5px;text-transform:uppercase;color:#64748b;font-weight:700}#rel .rk b{font-size:20px;line-height:1.15;display:block;margin:0}#rel .rk small{font-size:9.5px;color:#64748b;margin:0}
+#rel h2{font-size:11.5px;color:#ea580c;border-bottom:2px solid #ff7700;padding-bottom:2px;margin:0 0 4px;text-transform:uppercase}
+#rel table{font-size:10px;width:100%;border-collapse:collapse}#rel th{background:#f1f5f9;color:#0f172a;position:static;padding:3px 5px;text-align:left}
+#rel td{color:#0f172a;border-bottom:1px solid #e2e8f0;padding:3px 5px}#rel tr:hover td{background:transparent;color:#0f172a}
+#rel .rpr{display:flex;gap:7px;flex-wrap:wrap}#rel .rpr div{flex:1;min-width:70px;border:1px solid #e2e8f0;border-radius:6px;padding:4px 7px;text-align:center;font-size:10px;color:#475569}
+#rel .rpr b{display:block;font-size:15px;color:#0f172a}
+#rel .rob{border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;white-space:pre-wrap;max-height:90px;overflow:hidden;font-size:10.5px}
+#rel .rft{margin-top:auto;font-size:9px;color:#94a3b8;text-align:center}
+#rel .pl{padding:1px 7px;border-radius:9px;font-weight:700;color:#0b1220;font-size:9.5px}
+@media print{@page{size:A4;margin:0}body>*:not(#rel){display:none!important}body{background:#fff!important;padding:0!important;min-height:0!important}
+#rel{position:static;display:block!important;background:#fff;padding:0;overflow:visible}#rel .tb{display:none}
+#rel .pg{width:210mm;height:296mm;min-height:0;margin:0;overflow:hidden}}
+
+body.locked>*:not(#lk){visibility:hidden}
+#lk{position:fixed;inset:0;z-index:200;background:linear-gradient(135deg,#030712,#001d3d);display:none;align-items:center;justify-content:center;padding:20px}
+body.locked #lk{display:flex}
+#lk .lc{width:min(380px,100%);background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:28px 26px;text-align:center;box-shadow:0 0 40px rgba(255,119,0,.12)}
+#lk .logo{font-size:40px;margin-bottom:4px}
+#lk h2{font-size:16px;color:var(--tx);margin-bottom:4px}#lk p{font-size:12px;color:var(--mu);margin-bottom:16px}
+#lk .pw{display:flex;gap:8px;margin-bottom:10px}#lk .pw input{flex:1;padding:11px 12px;font-size:15px}
+#lk .btn{width:100%;padding:11px;font-size:14px}
+#lk .er{min-height:18px;margin-top:10px;font-size:12px;color:#f87171;font-weight:700}
+</style>
+</head>
+<body class="locked">
+<div id="lk"><div class="lc">
+  <div class="logo">🔒</div><div class="logo" style="font-size:26px;margin-top:-4px;background:linear-gradient(135deg,var(--or),#ffb74d,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900">TLP</div>
+  <h2>Acesso restrito</h2><p>Digite a senha para abrir o painel.</p>
+  <div class="pw"><input id="lkp" type="password" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key=='Enter')lkGo()"><button class="btn b-d" style="width:auto;padding:0 12px" type="button" title="Mostrar/ocultar" onclick="lkEye()">👁️</button></div>
+  <button class="btn" id="lkb" type="button" onclick="lkGo()">Entrar</button>
+  <div class="er" id="lkm"></div>
+</div></div>
+<script>
+(function(){
+const DEF='1153ea86558deefefda64f2378d8df1efbeb2024841e339d9d5d2ec8386536e3',SALT='tlp-painel|',g=i=>document.getElementById(i);
+function sha256(m){
+  const b=new TextEncoder().encode(m),l=b.length,n=((l+9+63)>>6)<<6,w=new Uint8Array(n);w.set(b);w[l]=128;
+  const dv=new DataView(w.buffer);dv.setUint32(n-4,(l*8)>>>0);dv.setUint32(n-8,Math.floor(l*8/4294967296));
+  const P=[];for(let i=2;P.length<64;i++){let ok=1;for(let j=2;j*j<=i;j++)if(i%j==0){ok=0;break}if(ok)P.push(i)}
+  const fr=x=>Math.floor((x%1)*4294967296)|0,K=P.map(p=>fr(Math.cbrt(p)));let H=P.slice(0,8).map(p=>fr(Math.sqrt(p)));
+  const R=(x,k)=>(x>>>k)|(x<<(32-k));
+  for(let i=0;i<n;i+=64){const W=new Array(64);for(let t=0;t<16;t++)W[t]=dv.getUint32(i+t*4)|0;
+    for(let t=16;t<64;t++){const a=W[t-15],c=W[t-2],s0=R(a,7)^R(a,18)^(a>>>3),s1=R(c,17)^R(c,19)^(c>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0}
+    let [a,b2,c,d,e,f,g2,h]=H;
+    for(let t=0;t<64;t++){const S1=R(e,6)^R(e,11)^R(e,25),ch=(e&f)^(~e&g2),t1=(h+S1+ch+K[t]+W[t])|0,S0=R(a,2)^R(a,13)^R(a,22),mj=(a&b2)^(a&c)^(b2&c),t2=(S0+mj)|0;
+      h=g2;g2=f;f=e;e=(d+t1)|0;d=c;c=b2;b2=a;a=(t1+t2)|0}
+    H=H.map((v,j)=>(v+[a,b2,c,d,e,f,g2,h][j])|0)}
+  return H.map(v=>(v>>>0).toString(16).padStart(8,'0')).join('')}
+window.__sha=sha256;
+const ok=()=>{try{return sessionStorage.getItem('tlp_ok')=='1'}catch(e){return false}};
+const cur=()=>{try{return localStorage.getItem('tlp_pw')||DEF}catch(e){return DEF}};
+const wait=()=>{try{return Math.max(0,(+localStorage.getItem('tlp_until')||0)-Date.now())}catch(e){return 0}};
+function show(){document.body.classList.add('locked');g('lkp').value='';g('lkm').textContent='';setTimeout(()=>{try{g('lkp').focus()}catch(e){}},50);tick()}
+function hide(){document.body.classList.remove('locked')}
+function tick(){const w=wait(),m=g('lkm'),b=g('lkb');
+  if(w>0){m.textContent='Muitas tentativas. Aguarde '+Math.ceil(w/1000)+'s.';b.disabled=true;setTimeout(tick,500)}
+  else{b.disabled=false;if(m.textContent.indexOf('Muitas')==0)m.textContent=''}}
+window.lkGo=function(){if(wait()>0)return tick();
+  if(sha256(SALT+g('lkp').value)==cur()){try{sessionStorage.setItem('tlp_ok','1');localStorage.removeItem('tlp_fail');localStorage.removeItem('tlp_until')}catch(e){}g('lkp').value='';hide();return}
+  try{const f=(+localStorage.getItem('tlp_fail')||0)+1;if(f>=5){localStorage.setItem('tlp_until',Date.now()+30000);localStorage.setItem('tlp_fail',0)}else localStorage.setItem('tlp_fail',f)}catch(e){}
+  g('lkm').textContent='Senha incorreta.';g('lkp').select();if(wait()>0)tick()};
+window.lkNow=function(){try{sessionStorage.removeItem('tlp_ok')}catch(e){}g('hm').style.display='none';show()};
+window.lkEye=function(){const i=g('lkp');i.type=i.type=='password'?'text':'password'};
+window.lkPw=function(){
+  g('hmT').textContent='🔑 Alterar senha';
+  g('hmB').innerHTML='<p class="m">A nova senha vale apenas neste navegador. Para trocar em todos os computadores, gere um arquivo novo.</p><div class="grid" style="grid-template-columns:1fr"><label>Senha atual<input type="password" id="pwA" autocomplete="off"></label><label>Nova senha (mín. 6 caracteres)<input type="password" id="pwN" autocomplete="off"></label><label>Repita a nova senha<input type="password" id="pwC" autocomplete="off"></label></div><div class="bar"><button class="btn b-g" onclick="lkSave()">💾 Salvar senha</button><button class="btn b-d" onclick="document.getElementById(\'hm\').style.display=\'none\'">Cancelar</button></div><div id="pwE" class="badge bad" style="display:none"></div>';
+  g('hm').style.display='flex'};
+window.lkSave=function(){const e=m=>{const x=g('pwE');x.textContent=m;x.style.display='inline-block'};
+  const a=g('pwA').value,n=g('pwN').value,c=g('pwC').value;
+  if(sha256(SALT+a)!=cur())return e('Senha atual incorreta.');
+  if(n.length<6)return e('A nova senha precisa ter pelo menos 6 caracteres.');
+  if(n!=c)return e('As senhas novas não conferem.');
+  try{localStorage.setItem('tlp_pw',sha256(SALT+n))}catch(x){return e('Não foi possível salvar neste navegador.')}
+  g('hm').style.display='none';alert('✅ Senha alterada neste navegador.')};
+if(ok())hide();else show();
+})();
+</script>
+
+<header>
+  <div style="display:flex;gap:14px;align-items:center"><div class="logo">TLP</div><span id="health" class="badge ok"></span></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+    <button class="btn b-d" id="undo" onclick="undo()">↩️ Desfazer (0)</button>
+    <select id="fmt"><option value="whats">WhatsApp</option><option value="teams">Teams</option></select>
+    <button class="btn b-p" onclick="cp(txtResumo())">📱 Copiar resumo</button>
+    <button class="btn b-x" onclick="openRel()">📄 Relatório executivo</button>
+    <button class="btn b-d" onclick="lkNow()">🔒 Bloquear</button>
+    <button class="btn b-d" onclick="lkPw()">🔑 Alterar senha</button>
+    <div style="text-align:right;font-size:13px;color:var(--mu)"><b>Painel de Monitoramento</b><br><span id="clock" style="color:var(--or)"></span></div>
+  </div>
+</header>
+
+<nav id="nav">
+  <button class="active" data-t="t1">🚨 CHAMADOS</button>
+  <button data-t="t2">📋 RESUMO GERAL & PASSAGEM DE BASTÃO</button>
+  <button data-t="t3">📈 INFOGRÁFICOS</button>
+  <button data-t="t4">📝 GENESIS (ANOTAÇÕES)</button>
+  <button data-t="t5">🗄️ BASES & BACKUP</button>
+</nav>
+
+<!-- 1. CHAMADOS -->
+<div id="t1" class="tab active">
+  <div class="card">
+    <h3>📥 Importação rápida (planilha ou área de transferência)</h3>
+    <p class="m">Lê as colunas <b>UF, TSK, END_ID e Prioridade</b> de todas as abas do arquivo. Resolução e Atualizações você preenche no painel. Antes de gravar, a prévia mostra as <b>entrantes</b> e as <b>repetidas</b>; TSKs repetidas nunca duplicam e não perdem a Resolução/Atualização já preenchida.</p>
+    <div class="drop" id="drop">📄 <b>Arraste a planilha aqui</b> ou clique para selecionar (.xlsx, .xls, .csv)
+      <input type="file" id="file" hidden accept=".xls,.xlsx,.csv"></div>
+    <button class="btn b-p" onclick="impClip()">📋 Colar tabela do Excel (clipboard)</button>
+    <div id="imp" class="badge ok" style="display:none;margin-top:10px"></div>
+  </div>
+
+  <div class="card" style="border:2px solid var(--or)">
+    <h3>➕ Registrar / Atualizar chamado</h3>
+    <div class="grid">
+      <label>TSK <input id="fTsk" placeholder="TSK260900043087" oninput="chk()"></label>
+      <label>END_ID <input id="fEnd" placeholder="4G-SBJZ06"></label>
+      <label>Estado (UF) <input id="fUf" placeholder="CE" maxlength="3" oninput="this.value=ufClean(this.value)"></label>
+      <label>Prioridade <select id="fP"></select></label>
+      <label>Resolução <select id="fR"></select></label>
+    </div>
+    <label style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--mu);font-weight:600;margin-bottom:12px">Atualizações / Observações
+      <input id="fObs" placeholder="Ex: técnico em deslocamento..."></label>
+    <div class="bar"><button class="btn b-g" onclick="add()">💾 Salvar chamado</button><span id="chk" class="badge"></span></div>
+  </div>
+
+  <div class="card">
+    <div class="bar">
+      <input id="q" placeholder="🔍 Buscar TSK, END_ID, UF, atualização..." oninput="renderT()" style="flex:1;min-width:200px">
+      <select id="fp" onchange="renderT()"></select>
+      <select id="fr" onchange="renderT()"></select>
+      <button class="btn b-x" onclick="xl()">📊 Exportar Excel (TLP)</button>
+    </div>
+    <div class="bar" id="chips"><span class="m" style="margin:0">Filtros rápidos:</span>
+      <button class="btn b-d sm chip" data-k="p1" onclick="qf('p1')">🔴 Só P1</button>
+      <button class="btn b-d sm chip" data-k="b" onclick="qf('b')">🔁 Só bastão</button>
+      <button class="btn b-d sm chip" data-k="s" onclick="qf('s')">⏰ SLA estourado</button>
+      <button class="btn b-d sm chip" data-k="a" onclick="qf('a')">🔗 Associação</button>
+      </div>
+    
+    <div class="tc"><table>
+      <thead><tr><th class="s" onclick="sortBy('tsk')">TSK ⇅</th><th class="s" onclick="sortBy('end')">END_ID ⇅</th><th class="s" onclick="sortBy('uf')">UF ⇅</th><th class="s" onclick="sortBy('p')">PRIORIDADE ⇅</th><th class="s" onclick="sortBy('res')">RESOLUÇÃO ⇅</th><th class="s" onclick="sortBy('sla')">SLA ⇅</th><th>ATUALIZAÇÕES</th><th></th></tr></thead>
+      <tbody id="tb"></tbody></table></div>
+  </div>
+</div>
+
+<!-- 2. RESUMO GERAL & BASTÃO -->
+<div id="t2" class="tab">
+  <div class="card">
+    <h3>📝 Responsável e observações do turno</h3>
+    <label style="display:block;font-size:12px;color:var(--mu);margin-bottom:10px">Operador <input id="op" style="display:block;margin-top:5px;width:300px" oninput="D.op=this.value;persist()" placeholder="Operador TLP - Turno"></label>
+    <label style="display:block;font-size:12px;color:var(--mu);margin-bottom:10px">Agrupar listas e textos copiados por <select id="gb" onchange="renderTurno()" style="display:block;margin-top:5px"><option value="res">Resolução</option><option value="p">Prioridade</option><option value="uf">Estado (UF)</option></select></label>
+    <textarea id="nota" placeholder="Incidentes em acompanhamento, recados para a próxima equipe..." oninput="D.nota=this.value;persist()"></textarea>
+  </div>
+  <div class="two">
+    <div class="card" style="border-top:3px solid #10b981">
+      <h3>✅ RESUMO GERAL — Todos os chamados (<span id="nG">0</span>)</h3>
+      <div class="bar"><button class="btn b-p" onclick="cp(txtGeral())">📱 Copiar Resumo Geral</button></div>
+      <div id="listG"></div>
+    </div>
+    <div class="card" style="border-top:3px solid #f59e0b">
+      <h3>🔁 PASSAGEM DE BASTÃO — Todos, exceto Encerrada e Tramitada (<span id="nB">0</span>)</h3>
+      <div class="bar"><button class="btn" onclick="cp(txtBastao())">📋 Copiar Passagem de Bastão</button></div>
+      <div id="listB"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. INFOGRÁFICOS -->
+<div id="t3" class="tab">
+  <div class="card bar" style="margin-bottom:18px">
+    <b>🎛️ Filtros dinâmicos:</b>
+    <select id="iu" onchange="renderInfo()"></select>
+    <select id="ip" onchange="renderInfo()"></select>
+    <span class="m" style="margin:0">Os gráficos se atualizam em tempo real com qualquer alteração.</span>
+  </div>
+  <div class="kp" id="kp"></div>
+  <div class="cg">
+    <div class="card cc"><h3>Prioridades</h3><canvas id="c1"></canvas></div>
+    <div class="card cc"><h3>Resoluções</h3><canvas id="c2"></canvas></div>
+    <div class="card cc"><h3>Passagem de Bastão × Finalizados</h3><canvas id="c5"></canvas></div>
+    <div class="card cc"><h3>Chamados por Estado (UF)</h3><canvas id="c3"></canvas></div>
+    <div class="card cc"><h3>Prioridade × Resolução</h3><canvas id="c4"></canvas></div>
+    <div class="card cc"><h3>Top 10 END_IDs</h3><canvas id="c6"></canvas></div>
+    <div class="card cc"><h3>⏳ Envelhecimento do bastão</h3><canvas id="c7"></canvas></div>
+    <div class="card cc" style="overflow:auto"><h3>🚨 Críticos agora (P1 em aberto)</h3><div id="crit"></div></div>
+    <div class="card cc" style="grid-column:1/-1"><div class="bar"><h3 style="margin:0">📈 Evolução: abertos × encerrados</h3><select id="ev" onchange="renderInfo()"><option value="dia">Por dia (7 dias)</option><option value="turno">Por turno (12 últimos)</option></select></div><canvas id="c9"></canvas></div>
+  </div>
+</div>
+
+<!-- 4. GENESIS -->
+<div id="t4" class="tab">
+  <div class="card" style="border:2px solid var(--or)">
+    <h3>🔗 Links dinâmicos Genesis / Sitebook</h3>
+    <label style="font-size:12px;color:var(--mu)">END_ID <input id="gP" placeholder="4G-SBJZ06" oninput="lk()" style="display:block;margin-top:5px;font-weight:700;color:var(--or)"></label>
+    <div class="url" id="uSb"></div>
+    <div class="bar">
+      <a id="aSb" target="_blank" class="btn b-g" style="text-decoration:none">🚀 Abrir Sitebook</a>
+      <button class="btn b-d" onclick="if($('gP').value.trim())cp(uSb.textContent)">📋 Copiar link</button>
+      <a href="http://10.174.231.236/" target="_blank" class="btn b-x" style="text-decoration:none">🌐 Site Genesis</a>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📝 Anotações Genesis</h3>
+    <p class="m">Espaço livre para anotações (mantido neste navegador).</p>
+    <textarea id="gn" style="height:260px" placeholder="Anote aqui..." oninput="D.gn=this.value;persist()"></textarea>
+  </div>
+</div>
+
+<!-- 5. BASES -->
+<div id="t5" class="tab">
+  <div class="card">
+    <h3>💾 Bases nomeadas (guardadas neste navegador)</h3>
+    <div class="bar"><input id="bn" placeholder="Nome (ex: Turno Noturno 11/09)" style="flex:1"><button class="btn b-g" onclick="saveBase()">💾 Guardar base atual</button></div>
+    <div class="tc"><table><thead><tr><th>Nome</th><th>Data</th><th>Chamados</th><th>Ações</th></tr></thead><tbody id="tbB"></tbody></table></div>
+    <hr style="border-color:var(--bd);margin:20px 0">
+    <h3>📦 Backup completo (JSON)</h3>
+    <div class="bar"><button class="btn b-x" onclick="expJson()">📥 Exportar</button>
+    <button class="btn b-p" onclick="bk.click()">📤 Importar</button><input type="file" id="bk" hidden accept=".json"></div>
+  </div>
+<div class="card"><h3>🛡️ Backups automáticos diários (últimos 7 dias)</h3>
+    <div class="tc"><table><thead><tr><th>Dia</th><th>Salvo em</th><th>Chamados</th><th>Ação</th></tr></thead><tbody id="tbA"></tbody></table></div></div>
+</div>
+<div id="hm" onclick="if(event.target==this)this.style.display='none'"><div class="card"><div class="bar"><h3 id="hmT" style="margin:0;flex:1"></h3><button class="btn b-d sm" onclick="$('hm').style.display='none'">✖</button></div><div id="hmB"></div></div></div>
+<div id="rel" onclick="if(event.target==this)this.style.display='none'"></div>
+<div id="toast"></div>
+<footer style="text-align:center;color:var(--mu);font-size:12px;padding:20px 0 6px">Developed by <b style="color:var(--or)">Lucas Gomes</b></footer>
+
+<script>
+const $=i=>document.getElementById(i);
+const PRI=['P1','P2','P3','P4','P5'];
+const RES=['Pendente','Não iniciada','Não acionado','Em atendimento','Suspensa','Associação','Tramitada','Encerrada'];
+const DONE=['Tramitada','Encerrada'],BASTAO=RES.filter(r=>!DONE.includes(r)),SLA_P1=60,SLA_ST=['Em atendimento','Não iniciada'],TURNOS=['Manhã','Tarde','Noite'],tIdx=h=>h>=6&&h<14?0:h>=14&&h<22?1:2;
+const PC={P1:'#ef4444',P2:'#f97316',P3:'#facc15',P4:'#38bdf8',P5:'#94a3b8'};
+const RC={'Pendente':'#f59e0b','Não iniciada':'#a78bfa','Não acionado':'#64748b','Em atendimento':'#38bdf8','Suspensa':'#fb923c','Associação':'#14b8a6','Tramitada':'#8b5cf6','Encerrada':'#10b981'};
+let D={t:[],nota:'',op:'',gn:''},U=[];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const opts=(L,all)=>(all?`<option value="">${all}</option>`:'')+L.map(o=>`<option>${o}</option>`).join('');
+const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2000)};
+const cp=t=>navigator.clipboard.writeText(t).then(()=>toast('✅ Copiado!'));
+
+/* ---------- Persistência ---------- */
+const ufClean=s=>String(s||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
+const dayK=t=>new Date(t).toLocaleDateString('sv-SE');
+function norm(){delete D.g;D.gn=D.gn||'';const n=Date.now();D.t.forEach(x=>{x.uf=ufClean(x.uf);x.c=x.c||n;x.u=x.u||x.c;x.h=x.h||[];if(DONE.includes(x.res)&&!x.cl)x.cl=x.u})}
+function load(){try{
+  const s=localStorage.getItem('tlp_v2');
+  if(s)D=Object.assign(D,JSON.parse(s));
+  else{const o=localStorage.getItem('tlp_p1p2');
+    if(o)D.t=JSON.parse(o).map(x=>({tsk:x.tsk,end:'',uf:x.cm||'',p:x.p||'P1',res:'Pendente',obs:x.diagnostico||''}));
+    D.nota=localStorage.getItem('tlp_notas_turno')||'';D.op=localStorage.getItem('tlp_operador_turno')||''}}catch(e){}
+  norm();autoBk()}
+function persist(){try{localStorage.setItem('tlp_v2',JSON.stringify(D))}catch(e){}}
+function autoBk(){try{const a=JSON.parse(localStorage.getItem('tlp_auto')||'{}');a[dayK(Date.now())]={s:new Date().toLocaleString('pt-BR'),d:{t:D.t,nota:D.nota,op:D.op,gn:D.gn}};Object.keys(a).sort().slice(0,-7).forEach(k=>delete a[k]);localStorage.setItem('tlp_auto',JSON.stringify(a))}catch(e){}}
+function save(){persist();autoBk();renderAll()}
+function snap(){U.push(JSON.stringify(D.t));if(U.length>30)U.shift();undoBtn()}
+function undo(){if(!U.length)return;D.t=JSON.parse(U.pop());save();toast('↩️ Alteração desfeita')}
+function undoBtn(){$('undo').textContent=`↩️ Desfazer (${U.length})`;$('undo').disabled=!U.length}
+
+/* ---------- Chamados ---------- */
+const inp=(i,k,v,w,m)=>`<input class="ei" value="${esc(v)}" style="width:${w}"${m?` maxlength="${m}"`:''} onchange="ed(${i},'${k}',this.value)">`;
+const sel=(i,k,L,v,C)=>`<select class="ei" style="border-left:5px solid ${C[v]}" onchange="ed(${i},'${k}',this.value)">${L.map(o=>`<option ${o==v?'selected':''}>${o}</option>`).join('')}</select>`;
+const FL={end:'END_ID',uf:'UF',p:'Prioridade',res:'Resolução',obs:'Atualização'},who=()=>D.op||'(operador não informado)';
+function apply(old,nw){const now=Date.now();
+  if(!old){nw.c=nw.u=now;nw.h=[{t:now,w:who(),k:'Criado',b:`${nw.p} • ${nw.res}`}];nw.cl=DONE.includes(nw.res)?now:null;return nw}
+  const o=Object.assign({},old,{h:(old.h||[]).slice()});let ch=0;
+  for(const k in FL){if(nw[k]===undefined)continue;const a=old[k]||'',b=nw[k]||'';if(a!==b){ch=1;o[k]=b;o.h.push({t:now,w:who(),k:FL[k],a,b})}}
+  if(ch){o.u=now;const was=DONE.includes(old.res),is=DONE.includes(o.res);if(!was&&is)o.cl=now;if(was&&!is)o.cl=null}
+  return o}
+const fmtM=m=>m<60?`${m}m`:`${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}m`,mins=x=>Math.floor((Date.now()-x.u)/6e4);
+const track=x=>SLA_ST.includes(x.res),breach=x=>x.p=='P1'&&track(x)&&mins(x)>=SLA_P1;
+function sla(x){if(!track(x))return'<span class="m0">—</span>';const m=mins(x);
+  if(x.p!='P1')return`<span class="m0">${fmtM(m)}</span>`;
+  return m>=SLA_P1?`<span class="sla bad blink">⏰ ${fmtM(m)}</span>`:`<span class="sla ${m>=SLA_P1*.75?'warn':'ok'}">⏱ ${fmtM(m)}</span>`}
+function ed(i,k,v){const val=k=='uf'?ufClean(v):v.trim();if((D.t[i][k]||'')===val){renderT();return}
+  snap();const n=Object.assign({},D.t[i]);n[k]=val;D.t[i]=apply(D.t[i],n);save()}
+function del(i){if(confirm('Remover este chamado?')){snap();D.t.splice(i,1);save()}}
+function rev(i){snap();const x=D.t[i];x.u=Date.now();x.h.push({t:x.u,w:who(),k:'Revisado',b:'sem alteração de dados'});save();toast('✔ SLA reiniciado')}
+function showH(i){const x=D.t[i];$('hmT').textContent='🕒 Histórico — '+x.tsk;
+  $('hmB').innerHTML=x.h.map((e,j)=>({e,j})).reverse().map(({e,j})=>`<div class="tl"><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><b>${new Date(e.t).toLocaleString('pt-BR')}</b> • ${esc(e.w)}<br>${e.a!==undefined?`${esc(e.k)}: <s>${esc(e.a||'—')}</s> → <b style="color:var(--or)">${esc(e.b||'—')}</b>`:`${esc(e.k)}${e.b?' — '+esc(e.b):''}`}</div><button class="btn b-d sm" title="Apagar este registro do histórico" onclick="delH(${i},${j})">🗑</button></div></div>`).join('')||'<p class="m">Sem histórico.</p>';
+  $('hm').style.display='flex'}
+function delH(i,j){if(!confirm('Apagar este registro do histórico? (não altera os dados atuais do chamado)'))return;snap();D.t[i].h.splice(j,1);save();showH(i);toast('🗑 Registro apagado')}
+const QF={};let SORT=null;
+const sv={tsk:x=>x.tsk,end:x=>x.end||'',uf:x=>x.uf||'',p:x=>x.p,res:x=>RES.indexOf(x.res),sla:x=>track(x)?mins(x):-1};
+function sortBy(k){SORT=SORT&&SORT.k==k?{k,d:-SORT.d}:{k,d:1};renderT()}
+function qf(k){QF[k]=!QF[k];renderT()}
+function vis(){const q=$('q').value.toUpperCase(),fp=$('fp').value,fr=$('fr').value;
+  const L=D.t.map((x,i)=>({x,i})).filter(({x})=>(!fp||x.p==fp)&&(!fr||x.res==fr)&&(!QF.p1||x.p=='P1')&&(!QF.b||BASTAO.includes(x.res))&&(!QF.s||breach(x))&&(!QF.a||x.res=='Associação')&&(!q||[x.tsk,x.end,x.uf,x.p,x.res,x.obs].join(' ').toUpperCase().includes(q)));
+  if(SORT){const f=sv[SORT.k];L.sort((a,b)=>{const A=f(a.x),B=f(b.x);return(A>B?1:A<B?-1:0)*SORT.d})}return L}
+function renderT(){
+  document.querySelectorAll('#chips .chip').forEach(c=>c.classList.toggle('on',!!QF[c.dataset.k]));
+  $('tb').innerHTML=vis().map(({x,i})=>`<tr class="${breach(x)?'br':''}"><td class="tk">${esc(x.tsk)}</td><td>${inp(i,'end',x.end,'110px')}</td><td>${inp(i,'uf',x.uf,'55px',3)}</td><td>${sel(i,'p',PRI,x.p,PC)}</td><td>${sel(i,'res',RES,x.res,RC)}</td><td>${sla(x)}</td><td>${inp(i,'obs',x.obs,'100%')}</td><td style="white-space:nowrap"><button class="btn b-d sm" title="Histórico" onclick="showH(${i})">🕒${x.h.length}</button> ${track(x)?`<button class="btn b-g sm" title="Marcar como revisado (reinicia o SLA)" onclick="rev(${i})">✔</button> `:''}<button class="btn b-r sm" onclick="del(${i})">❌</button></td></tr>`).join('')
+   ||'<tr><td colspan="8" class="c">Nenhum chamado.</td></tr>';
+}
+function chk(){const v=$('fTsk').value.trim().toUpperCase(),b=$('chk');
+  if(!v){b.textContent='';b.className='badge';return}
+  const e=D.t.find(x=>x.tsk.toUpperCase()==v);b.className='badge '+(e?'bad':'ok');b.textContent=e?'⚠️ REPETIDA — será atualizada':'✨ TSK NOVA'}
+function add(){const tsk=$('fTsk').value.trim();if(!tsk)return alert('Informe a TSK.');snap();
+  const o={tsk,end:$('fEnd').value.trim().toUpperCase(),uf:ufClean($('fUf').value),p:$('fP').value,res:$('fR').value,obs:$('fObs').value.trim()};
+  const i=D.t.findIndex(x=>x.tsk.toUpperCase()==tsk.toUpperCase());i>=0?D.t[i]=apply(D.t[i],o):D.t.push(apply(null,o));
+  ['fTsk','fEnd','fUf','fObs'].forEach(k=>$(k).value='');chk();save();toast('✅ Chamado salvo')}
+
+/* importação */
+const nk=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+let PEND=[];
+function imp(rows,info){PEND=[];const seen={};let dup=0,ign=0,semP=0;
+  rows.forEach(r=>{const m={};for(const k in r)m[nk(k)]=r[k];
+    const g=(...a)=>{for(const k of a)if(m[k]!==undefined&&m[k]!=='')return String(m[k]).trim();return''};
+    const tsk=g('TSK','CHAMADO').replace(/\s+/g,'');if(!tsk)return;
+    if(!/^TSK/i.test(tsk)){ign++;return}
+    const key=tsk.toUpperCase();if(seen[key]){dup++;return}seen[key]=1;
+    const end=g('END_ID','ENDID','END').toUpperCase().replace(/\s+/g,''),uf=ufClean(g('ESTADO','UF','CM')),pr=g('PRIORIDADE','P').toUpperCase(),pm=pr.match(/P\s*([1-5])/),p=pm?'P'+pm[1]:undefined;
+    const o={tsk};if(end)o.end=end;if(uf)o.uf=uf;if(p)o.p=p;else semP++;PEND.push(o)});
+  if(!PEND.length)return alert('Nenhuma TSK reconhecida. Verifique se a planilha tem a coluna TSK (ex: TSK261000154017).');
+  const R=PEND.map(o=>{const i=D.t.findIndex(x=>x.tsk.toUpperCase()==o.tsk.toUpperCase());
+    if(i<0)return{o,s:'novo'};
+    const p=D.t[i],d=['end','uf','p'].filter(k=>o[k]!==undefined&&(p[k]||'')!==o[k]).map(k=>`${FL[k]}: ${esc(p[k]||'—')} → <b style="color:var(--or)">${esc(o[k])}</b>`);
+    return{o,p,s:d.length?'alterado':'igual',d}});
+  const nov=R.filter(x=>x.s=='novo').sort((a,b)=>(a.o.p||'P1').localeCompare(b.o.p||'P1')||(a.o.uf||'').localeCompare(b.o.uf||'')),rep=R.filter(x=>x.s!='novo'),alt=rep.filter(x=>x.s=='alterado');
+  const pill=p=>`<span class="pill" style="background:${PC[p]||'#94a3b8'}">${p}</span>`;
+  const row=x=>`<div class="tl"><b>${esc(x.o.tsk)}</b> • ${esc(x.o.end||(x.p&&x.p.end)||'—')} • ${esc(x.o.uf||(x.p&&x.p.uf)||'—')} • ${pill(x.o.p||(x.p&&x.p.p)||'P1')}`+(x.p?` • <span class="m0">já no painel: ${esc(x.p.res)}</span>`+(x.d.length?'<br>✏️ '+x.d.join(' • '):''):'')+'</div>';
+  const sec=(t,L,col)=>`<h3 style="margin:14px 0 6px;color:${col}">${t} (${L.length})</h3>`+(L.length?L.slice(0,200).map(row).join('')+(L.length>200?'<p class="m">Mostrando as 200 primeiras.</p>':''):'<p class="m">Nenhuma.</p>');
+  $('hmT').textContent='📥 Prévia da importação';
+  $('hmB').innerHTML=`<p class="m">${info?info+' • ':''}📄 <b>${PEND.length}</b> TSKs lidas • ✨ <b>${nov.length}</b> entrantes • 🔁 <b>${rep.length}</b> repetidas${alt.length?' ('+alt.length+' com dados diferentes)':''}${dup?' • ⚠️ '+dup+' duplicada(s) dentro do arquivo':''}${ign?' • '+ign+' linha(s) ignorada(s) sem TSK válida':''}${semP?' • ⚠️ '+semP+' sem prioridade reconhecida (novas entram como P1)':''}</p><div class="bar"><button class="btn b-g" onclick="impOk()" ${nov.length||alt.length?'':'disabled'}>✅ Confirmar importação</button><button class="btn b-d" onclick="$('hm').style.display='none'">${nov.length||alt.length?'Cancelar':'Fechar'}</button></div>`+sec('✨ ENTRANTES (novas no painel)',nov,'#34d399')+sec('🔁 REPETIDAS (já estavam no painel)',rep,'#fbbf24');
+  $('hm').style.display='flex'}
+function impOk(){snap();let n=0,u=0;const tot=PEND.length;
+  PEND.forEach(o=>{const i=D.t.findIndex(x=>x.tsk.toUpperCase()==o.tsk.toUpperCase());
+    if(i>=0){const p=D.t[i],r=apply(p,o);if(r.u!==p.u)u++;D.t[i]=r}
+    else{D.t.push(apply(null,{tsk:o.tsk,end:o.end||'',uf:o.uf||'',p:o.p||'P1',res:'Pendente',obs:''}));n++}});
+  PEND=[];$('hm').style.display='none';save();const b=$('imp');b.style.display='inline-block';b.textContent=`✅ ${n} entrantes • ${tot-n} repetidas (${u} com dados atualizados) • ${new Date().toLocaleTimeString('pt-BR')}`}
+function impFile(f){if(!f)return;
+  if(typeof XLSX==='undefined')return alert('A biblioteca de planilhas não carregou (sem internet?). Use o botão "Colar tabela do Excel".');
+  const r=new FileReader();r.onload=e=>{try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const rows=[];let ab=0;
+    wb.SheetNames.forEach(n=>{const a=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false});
+      const hi=a.slice(0,30).findIndex(l=>l.some(c=>nk(c)=='TSK'));if(hi<0)return;ab++;
+      const h=a[hi];a.slice(hi+1).forEach(l=>{const o={};h.forEach((k,i)=>{if(String(k).trim()!=='')o[k]=l[i]});rows.push(o)})});
+    imp(rows,`📑 ${ab} de ${wb.SheetNames.length} aba(s) lida(s)`)}catch(err){alert('Não consegui ler o arquivo: '+err)}};
+  r.readAsArrayBuffer(f);$('file').value=''}
+function impClip(){navigator.clipboard.readText().then(t=>{const L=t.trim().split(/\r?\n/);if(L.length<2)return alert('Copie a tabela com o cabeçalho.');
+  const h=L[0].split('\t');imp(L.slice(1).map(l=>{const c=l.split('\t'),o={};h.forEach((k,i)=>o[k]=c[i]||'');return o}))}).catch(e=>alert('Erro ao ler a área de transferência: '+e))}
+
+/* ---------- Resumo Geral & Bastão ---------- */
+const ord=L=>L.slice().sort((a,b)=>a.p.localeCompare(b.p));
+const mini=L=>L.length?`<div class="tc"><table><thead><tr><th>TSK</th><th>END_ID</th><th>UF</th><th>P</th><th>Resolução</th><th>SLA</th><th>Atualização</th></tr></thead><tbody>${ord(L).map(x=>`<tr class="${breach(x)?'br':''}"><td class="tk">${esc(x.tsk)}</td><td>${esc(x.end)}</td><td>${esc(x.uf)}</td><td><span class="pill" style="background:${PC[x.p]}">${x.p}</span></td><td><span class="pill" style="background:${RC[x.res]}">${x.res}</span></td><td>${sla(x)}</td><td style="white-space:pre-line">${esc(x.obs)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="m">Nenhum chamado nesta categoria.</p>';
+const bd=s=>$('fmt').value=='teams'?`**${s}**`:`*${s}*`;
+const line=x=>`• ${bd(x.tsk)} | ${x.end||'-'} | ${x.p} | ${x.res}${x.obs?' | '+x.obs.replace(/\n/g,'\n   ↳ '):''}${breach(x)?' ⏰ SLA '+fmtM(mins(x)):''}`;
+const byRes=L=>RES.filter(r=>L.some(x=>x.res==r));
+function gOf(x){const m=$('gb').value;return m=='p'?x.p:m=='uf'?(x.uf||'—'):x.res}
+function gKeys(L){const m=$('gb').value;return m=='p'?PRI.filter(k=>L.some(x=>x.p==k)):m=='uf'?[...new Set(L.map(x=>x.uf||'—'))].sort():byRes(L)}
+const grp=L=>gKeys(L).map(k=>`\n${bd(k+' ('+L.filter(x=>gOf(x)==k).length+')')}\n`+ord(L.filter(x=>gOf(x)==k)).map(line).join('\n')).join('\n');
+const miniG=L=>L.length?gKeys(L).map(k=>`<h3 style="margin:12px 0 6px;color:var(--tx)">${esc(k)} <span class="m0">(${L.filter(x=>gOf(x)==k).length})</span></h3>`+mini(L.filter(x=>gOf(x)==k))).join(''):mini(L);
+const bast=()=>D.t.filter(x=>BASTAO.includes(x.res));
+const head=t=>{const n=new Date();return`📋 ${bd(t)}\n📅 ${bd('Data:')} ${n.toLocaleDateString('pt-BR')} ${n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}\n🕐 ${bd('Turno:')} ${TURNOS[tIdx(n.getHours())]}\n👤 ${bd('Responsável:')} ${D.op||'—'}\n`};
+const alertP1=()=>{const b=D.t.filter(breach);return b.length?`\n🚨 ${bd('P1 sem atualização há mais de 1h ('+b.length+'):')} ${b.map(x=>x.tsk).join(', ')}\n`:''};
+const obsTxt=()=>`\n\n${bd('Observações:')}\n${D.nota||'Sem alterações relevantes.'}`;
+function txtGeral(){return head('RESUMO GERAL - TLP')+`${bd('Total:')} ${D.t.length} chamados • ${bast().length} em aberto\n`+alertP1()+grp(D.t)}
+function txtBastao(){return head('PASSAGEM DE BASTÃO - TLP')+alertP1()+grp(bast())+obsTxt()}
+function txtResumo(){return head('RESUMO DO TURNO - TLP')+`\n${bd('Total:')} ${D.t.length} chamados • ${bast().length} em aberto • ${D.t.length-bast().length} finalizados\n`+byRes(D.t).map(r=>`• ${r}: ${D.t.filter(x=>x.res==r).length}`).join('\n')+'\n'+alertP1()+`\n🔁 ${bd('PASSAGEM DE BASTÃO ('+bast().length+')')}`+grp(bast())+obsTxt()}
+function renderTurno(){const B=bast();
+  $('nG').textContent=D.t.length;$('nB').textContent=B.length;$('listG').innerHTML=miniG(D.t);$('listB').innerHTML=miniG(B)}
+
+/* ---------- Genesis (apenas link + anotações) ---------- */
+function lk(){
+  const e=($('gP').value||'').trim();
+  const g=$('gE'); if(g&&e) g.value=e;
+  const u=`http://10.174.231.236/operations/analisys/online/sitebook.php?grup=${encodeURIComponent(e)}&site=grup&time=%24timegrup&bsc=grup&disp=grup`;
+  $('uSb').textContent=e?u:'Digite o END_ID acima para gerar o link';
+  const a=$('aSb'); a.href=e?u:'#'; a.style.opacity=e?1:.5;
+}
+['input','keyup','change','paste'].forEach(ev=>$('gP').addEventListener(ev,()=>setTimeout(lk,0)));
+
+/* ---------- Infográficos ---------- */
+const CH={};
+const CTR={id:'ctr',afterDraw(c){if(c.config.type!='doughnut')return;const s=c.data.datasets[0].data.reduce((a,b)=>a+b,0),a=c.chartArea,x=(a.left+a.right)/2,y=(a.top+a.bottom)/2,g=c.ctx;g.save();g.textAlign='center';g.textBaseline='middle';g.fillStyle='#f8fafc';g.font=s?'700 28px sans-serif':'600 14px sans-serif';g.fillText(s?s:'Sem dados',x,y-(s?6:0));if(s){g.font='11px sans-serif';g.fillStyle='#94a3b8';g.fillText('chamados',x,y+16)}g.restore()}};
+function ch(id,type,labels,ds,o={}){if(CH[id])CH[id].destroy();const ax={ticks:{color:'#94a3b8',precision:0},grid:{color:'#ffffff14'}};
+  CH[id]=new Chart($(id),{type,plugins:[CTR],data:{labels,datasets:ds},options:Object.assign({responsive:true,maintainAspectRatio:false,
+   cutout:'62%',plugins:{legend:{display:type=='doughnut'||ds.length>1,position:'bottom',labels:{color:'#94a3b8'}},tooltip:type=='doughnut'?{callbacks:{label:t=>` ${t.label}: ${t.raw} (${Math.round(t.raw/(t.dataset.data.reduce((a,b)=>a+b,0)||1)*100)}%)`}}:{}},
+   scales:type=='doughnut'?{}:{x:Object.assign({stacked:!!o.stk},ax),y:Object.assign({stacked:!!o.stk,beginAtZero:true},ax)}},o.o||{})})}
+function renderInfo(){
+  const ufs=[...new Set(D.t.map(x=>x.uf).filter(Boolean))].sort(),cu=$('iu').value;
+  $('iu').innerHTML=opts(ufs,'Todos os estados');$('iu').value=ufs.includes(cu)?cu:'';
+  const T=D.t.filter(x=>(!$('iu').value||x.uf==$('iu').value)&&(!$('ip').value||x.p==$('ip').value));
+  const n=(L,f)=>L.map(k=>T.filter(x=>x[f]==k).length),done=T.filter(x=>DONE.includes(x.res)).length;
+  const gB=T.filter(x=>BASTAO.includes(x.res)).length,sB=T.filter(breach).length;
+  const pc=v=>T.length?Math.round(v/T.length*100)+'% do total':'—',eA=T.filter(x=>x.res=='Em atendimento').length,aA=T.filter(x=>x.res=='Associação').length,ap=T.filter(x=>['P1','P2'].includes(x.p)&&!DONE.includes(x.res)).length;
+  $('kp').innerHTML=[['Chamados',T.length,'#ff7700','filtro atual'],['Concluídos',done,'#10b981',pc(done)],['Em atendimento',eA,'#38bdf8',pc(eA)],['Associação',aA,'#14b8a6',pc(aA)],['No bastão',gB,'#f59e0b',pc(gB)],['P1/P2 em aberto',ap,'#ef4444',pc(ap)],['Fora do SLA',sB,'#ef4444','P1 há mais de 1h']].map(k=>`<div style="--k:${k[2]}">${k[0]}<b style="color:${k[2]}">${k[1]}</b><small>${k[3]}</small></div>`).join('');
+  ch('c1','doughnut',PRI,[{data:n(PRI,'p'),backgroundColor:PRI.map(p=>PC[p]),borderWidth:0}]);
+  ch('c2','doughnut',RES,[{data:n(RES,'res'),backgroundColor:RES.map(r=>RC[r]),borderWidth:0}]);
+  ch('c5','doughnut',['Passagem de Bastão','Finalizados (Tram./Enc.)'],[{data:[gB,T.length-gB],backgroundColor:['#f59e0b','#10b981'],borderWidth:0}]);
+  const U=[...new Set(T.map(x=>x.uf||'—'))].sort();
+  ch('c3','bar',U,[{label:'Chamados',data:U.map(u=>T.filter(x=>(x.uf||'—')==u).length),backgroundColor:'#ff7700',borderRadius:6}]);
+  ch('c4','bar',PRI,RES.map(r=>({label:r,data:PRI.map(p=>T.filter(x=>x.p==p&&x.res==r).length),backgroundColor:RC[r]})),{stk:1});
+  const E={};T.forEach(x=>x.end&&(E[x.end]=(E[x.end]||0)+1));const te=Object.entries(E).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  ch('c6','bar',te.map(e=>e[0]),[{label:'Chamados',data:te.map(e=>e[1]),backgroundColor:'#38bdf8',borderRadius:6}],{o:{indexAxis:'y'}});
+  const BK=['< 1h','1–4h','4–8h','> 8h'],ag=[0,0,0,0];T.filter(x=>BASTAO.includes(x.res)).forEach(x=>{const h=(Date.now()-x.c)/36e5;ag[h<1?0:h<4?1:h<8?2:3]++});
+  ch('c7','bar',BK,[{label:'Chamados no bastão',data:ag,backgroundColor:['#10b981','#facc15','#f97316','#ef4444'],borderRadius:6}]);
+  const cr=T.filter(x=>x.p=='P1'&&!DONE.includes(x.res)).sort((a,b)=>a.u-b.u);
+  $('crit').innerHTML=cr.length?cr.map(x=>`<div class="tl" style="border-color:${breach(x)?'#ef4444':'#f59e0b'}"><b>${esc(x.tsk)}</b> • ${esc(x.end||'-')} • ${esc(x.res)} ${sla(x)}<br>${esc(x.obs||'')}</div>`).join(''):'<p class="m">✅ Nenhum P1 em aberto.</p>';
+  renderEvo(T);
+}
+
+function evKey(t,m){const d=new Date(t),h=d.getHours();if(m=='dia')return dayK(t);if(h<6)d.setDate(d.getDate()-1);return dayK(d)+'|'+tIdx(h)}
+function renderEvo(T){const m=$('ev').value,N=m=='dia'?7:12,st=m=='dia'?864e5:288e5,now=Date.now(),K=[];
+  for(let i=N-1;i>=0;i--)K.push(evKey(now-i*st,m));
+  const lab=k=>k.slice(8,10)+'/'+k.slice(5,7)+(m=='turno'?' '+TURNOS[k.split('|')[1]]:'');
+  ch('c9','bar',K.map(lab),[{label:'Abertos',data:K.map(k=>T.filter(x=>evKey(x.c,m)==k).length),backgroundColor:'#ff7700',borderRadius:4},{label:'Encerrados/Tramitados',data:K.map(k=>T.filter(x=>x.cl&&evKey(x.cl,m)==k).length),backgroundColor:'#10b981',borderRadius:4}])}
+
+/* ---------- Exportação Excel estilizada ---------- */
+async function xl(){
+  if(!D.t.length)return alert('Sem dados para exportar.');
+  const wb=new ExcelJS.Workbook();wb.creator='Painel TLP';
+  const OR='FFFF7700',ZB='FFFFF1E0',bd={style:'thin',color:{argb:'FFD9D9D9'}},B={top:bd,left:bd,bottom:bd,right:bd};
+  const fill=a=>({type:'pattern',pattern:'solid',fgColor:{argb:a}}),hex=c=>'FF'+c.slice(1).toUpperCase(),now=new Date().toLocaleString('pt-BR');
+  function sheet(name,title,cols,rows,cc={}){
+    const ws=wb.addWorksheet(name,{views:[{state:'frozen',ySplit:4,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+    ws.columns=cols.map(c=>({width:c[1]}));
+    ws.mergeCells(1,1,1,cols.length);const t=ws.getCell(1,1);t.value='TLP — '+title;t.font={size:16,bold:true,color:{argb:'FFFFFFFF'}};t.fill=fill('FF1E293B');t.alignment={vertical:'middle',indent:1};ws.getRow(1).height=32;
+    ws.mergeCells(2,1,2,cols.length);const s=ws.getCell(2,1);s.value=`Gerado em ${now}  •  Responsável: ${D.op||'—'}  •  ${rows.length} registro(s)`;s.font={italic:true,color:{argb:'FF64748B'}};
+    const h=ws.getRow(4);h.height=26;cols.forEach((c,i)=>{const x=h.getCell(i+1);x.value=c[0];x.font={bold:true,color:{argb:'FFFFFFFF'}};x.fill=fill(OR);x.alignment={horizontal:'center',vertical:'middle',wrapText:true};x.border=B});
+    rows.forEach((r,ri)=>{const row=ws.getRow(5+ri);r.forEach((v,i)=>{const x=row.getCell(i+1);x.value=v;x.border=B;x.alignment={vertical:'top',wrapText:true,horizontal:cols[i][2]||'left'};
+      if(ri%2)x.fill=fill(ZB);
+      if(cc[i]&&cc[i][v]){x.fill=fill(hex(cc[i][v]));x.font={bold:true,color:{argb:'FF0B1220'}};x.alignment={vertical:'top',horizontal:'center'}}})});
+    ws.autoFilter={from:{row:4,column:1},to:{row:4,column:cols.length}};return ws}
+  const T=ord(D.t),tot=T.length||1,destino=x=>BASTAO.includes(x.res)?'Geral + Bastão':'Somente Geral';
+  // 1. Resumo executivo
+  const sm=[['TOTAL DE CHAMADOS',T.length,1],...PRI.map(p=>['Prioridade '+p,T.filter(x=>x.p==p).length,T.filter(x=>x.p==p).length/tot]),
+    ...RES.map(r=>['Resolução: '+r,T.filter(x=>x.res==r).length,T.filter(x=>x.res==r).length/tot]),
+    ['Resumo Geral (todos os chamados)',T.length,1],
+    ['Passagem de Bastão (todos, exceto Tram. e Enc.)',T.filter(x=>BASTAO.includes(x.res)).length,T.filter(x=>BASTAO.includes(x.res)).length/tot],
+    ...[...new Set(T.map(x=>x.uf||'—'))].sort().map(u=>['UF '+u,T.filter(x=>(x.uf||'—')==u).length,T.filter(x=>(x.uf||'—')==u).length/tot])];
+  const w1=sheet('Resumo','Resumo Executivo',[['Indicador',52],['Quantidade',14,'center'],['% do total',14,'center']],sm);
+  w1.getColumn(3).numFmt='0.0%';w1.getCell(5,1).font={bold:true};
+  try{w1.addConditionalFormatting({ref:`C5:C${4+sm.length}`,rules:[{type:'dataBar',gradient:false,cfvo:[{type:'num',value:0},{type:'num',value:1}],color:{argb:'FFFF7700'}}]})}catch(e){}
+  // 2. Todos os chamados
+  sheet('Chamados','Chamados P1–P5',[['TSK',22],['END_ID',16],['UF',8,'center'],['PRIORIDADE',14],['RESOLUÇÃO',18],['DESTINO',22],['ÚLTIMA ATUALIZAÇÃO',20],['ATUALIZAÇÕES',60]],
+    T.map(x=>[x.tsk,x.end,x.uf,x.p,x.res,destino(x),new Date(x.u).toLocaleString('pt-BR'),x.obs]),{3:PC,4:RC});
+  // 3. Resumo geral
+  const G=T;
+  sheet('Resumo Geral','Resumo Geral (todos os chamados)',[['TSK',22],['END_ID',16],['UF',8,'center'],['PRIORIDADE',14],['RESOLUÇÃO',18],['ATUALIZAÇÕES',60]],
+    G.map(x=>[x.tsk,x.end,x.uf,x.p,x.res,x.obs]),{3:PC,4:RC});
+  // 4. Passagem de bastão
+  const Bt=T.filter(x=>BASTAO.includes(x.res));
+  const w4=sheet('Passagem de Bastão','Passagem de Bastão (todos, exceto Tramitada e Encerrada)',[['TSK',22],['END_ID',16],['UF',8,'center'],['PRIORIDADE',14],['RESOLUÇÃO',18],['ATUALIZAÇÕES',60]],
+    Bt.map(x=>[x.tsk,x.end,x.uf,x.p,x.res,x.obs]),{3:PC,4:RC});
+  const nr=w4.rowCount+2;w4.mergeCells(nr,1,nr,6);const lb=w4.getCell(nr,1);lb.value='OBSERVAÇÕES DO TURNO';lb.font={bold:true,color:{argb:'FFFFFFFF'}};lb.fill=fill(OR);
+  w4.mergeCells(nr+1,1,nr+1,6);const nt=w4.getCell(nr+1,1);nt.value=D.nota||'Sem alterações relevantes.';nt.alignment={wrapText:true,vertical:'top'};nt.border=B;w4.getRow(nr+1).height=90;
+  // 5. Histórico de alterações
+  sheet('Histórico','Histórico de alterações',[['TSK',22],['DATA/HORA',20],['OPERADOR',24],['CAMPO',18],['DE',28],['PARA',40]],
+    T.flatMap(x=>(x.h||[]).map(e=>[e.t,x.tsk,e.w,e.k,e.a??'',e.b??''])).sort((a,b)=>b[0]-a[0]).map(r=>[r[1],new Date(r[0]).toLocaleString('pt-BR'),...r.slice(2)]));
+  const buf=await wb.xlsx.writeBuffer(),a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  a.download=`Relatorio_TLP_${new Date().toISOString().slice(0,10)}.xlsx`;a.click();toast('📊 Excel gerado')}
+
+/* ---------- Relatório executivo (PDF 1 página) e Excel gerencial ---------- */
+function repData(){
+  const T=D.t,now=Date.now(),d24=now-864e5,open=T.filter(x=>BASTAO.includes(x.res)),fin=T.filter(x=>DONE.includes(x.res));
+  const tt=fin.filter(x=>x.cl&&x.c&&x.cl>=x.c).map(x=>x.cl-x.c),avg=tt.length?Math.round(tt.reduce((a,b)=>a+b,0)/tt.length/6e4):null;
+  const E={};T.forEach(x=>{if(!x.end)return;const e=E[x.end]||(E[x.end]={end:x.end,uf:x.uf||'',n:0,ab:0,p1:0});e.n++;if(BASTAO.includes(x.res))e.ab++;if(x.p=='P1')e.p1++});
+  return{T,open,fin,avg,p1o:T.filter(x=>x.p=='P1'&&BASTAO.includes(x.res)).sort((a,b)=>a.u-b.u),br:T.filter(breach).length,
+    c24:T.filter(x=>x.c>=d24).length,f24:fin.filter(x=>x.cl>=d24).length,
+    rein:Object.values(E).filter(e=>e.n>1).sort((a,b)=>b.n-a.n||b.ab-a.ab||a.end.localeCompare(b.end))}}
+const pctS=(a,b)=>b?Math.round(a/b*100)+'%':'—';
+function relHtml(){const R=repData(),n=new Date(),pill=p=>`<span class="pl" style="background:${PC[p]||'#94a3b8'}">${p}</span>`;
+  const k=(l,v,sb,c)=>`<div class="rk" style="border-left-color:${c}"><span>${l}</span><b style="color:${c}">${v}</b><small>${sb}</small></div>`;
+  const P1=R.p1o.slice(0,10),RE=R.rein.slice(0,6);
+  return`<div class="pg">
+  <div class="rhd"><div><h1>TLP — Relatório Executivo de Operação</h1><small style="text-align:left;display:block">Painel de Gestão Operacional</small></div>
+    <small>${n.toLocaleDateString('pt-BR')} ${n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}<br>Turno: ${TURNOS[tIdx(n.getHours())]}<br>Responsável: ${esc(D.op||'—')}</small></div>
+  <div class="rkg">
+    ${k('Total de chamados',R.T.length,'no painel','#0f172a')}
+    ${k('Em aberto',R.open.length,pctS(R.open.length,R.T.length)+' do total','#f59e0b')}
+    ${k('Finalizados',R.fin.length,pctS(R.fin.length,R.T.length)+' • Tram./Enc.','#10b981')}
+    ${k('Tempo médio',R.avg==null?'—':fmtM(R.avg),'de tratamento (finalizados)','#0284c7')}
+    ${k('P1 em aberto',R.p1o.length,'chamados críticos','#ef4444')}
+    ${k('P1 fora do SLA',R.br,'sem atualização há +1h',R.br?'#ef4444':'#10b981')}
+    ${k('Registrados 24h',R.c24,'novos no painel','#ff7700')}
+    ${k('Finalizados 24h',R.f24,'nas últimas 24h','#8b5cf6')}
+  </div>
+  <div><h2>Em aberto por prioridade</h2><div class="rpr">${PRI.map(p=>`<div>${pill(p)}<b>${R.open.filter(x=>x.p==p).length}</b>de ${R.T.filter(x=>x.p==p).length}</div>`).join('')}</div></div>
+  <div><h2>🚨 P1 críticos em aberto (${R.p1o.length})</h2>${P1.length?`<table><thead><tr><th>TSK</th><th>END_ID</th><th>UF</th><th>Resolução</th><th>Sem atualização</th><th>Atualização</th></tr></thead><tbody>${P1.map(x=>`<tr><td><b>${esc(x.tsk)}</b></td><td>${esc(x.end||'—')}</td><td>${esc(x.uf||'—')}</td><td>${esc(x.res)}</td><td${breach(x)?' style="color:#dc2626;font-weight:700"':''}>${fmtM(mins(x))}${breach(x)?' ⏰':''}</td><td>${esc((x.obs||'—').length>70?(x.obs.slice(0,69)+'…'):(x.obs||'—'))}</td></tr>`).join('')}</tbody></table>`+(R.p1o.length>10?`<div style="font-size:9.5px;color:#64748b;margin-top:3px">+ ${R.p1o.length-10} P1 não exibidos (mais antigos sem atualização aparecem primeiro). Lista completa no painel.</div>`:''):'<div class="rob">✅ Nenhum P1 em aberto.</div>'}</div>
+  <div><h2>🔁 Sites reincidentes (END_ID com 2+ chamados)</h2>${RE.length?`<table><thead><tr><th>END_ID</th><th>UF</th><th>Chamados</th><th>Em aberto</th><th>P1</th></tr></thead><tbody>${RE.map(e=>`<tr><td><b>${esc(e.end)}</b></td><td>${esc(e.uf||'—')}</td><td>${e.n}</td><td>${e.ab}</td><td>${e.p1}</td></tr>`).join('')}</tbody></table>`+(R.rein.length>6?`<div style="font-size:9.5px;color:#64748b;margin-top:3px">+ ${R.rein.length-6} sites reincidentes no Excel gerencial.</div>`:''):'<div class="rob">Nenhum END_ID com mais de um chamado.</div>'}</div>
+  <div><h2>📝 Observações do turno</h2><div class="rob">${esc(D.nota||'Sem alterações relevantes.')}</div></div>
+  <div class="rft">Painel TLP • Tempo de tratamento medido desde o registro do chamado no painel • Gerado em ${n.toLocaleString('pt-BR')}</div></div>`}
+function openRel(){if(!D.t.length)return alert('Sem chamados para gerar o relatório.');
+  $('rel').innerHTML=`<div class="tb"><button class="btn b-g" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button><button class="btn b-x" onclick="relXlsx()">📊 Baixar Excel gerencial</button><button class="btn b-d" onclick="$('rel').style.display='none'">✖ Fechar</button><span class="m" style="margin:0">No diálogo de impressão, escolha “Salvar como PDF” (1 página, A4).</span></div>`+relHtml();
+  $('rel').style.display='block';$('rel').scrollTop=0}
+document.addEventListener('keydown',e=>{if(e.key=='Escape')$('rel').style.display='none'});
+async function relXlsx(){
+  if(typeof ExcelJS==='undefined')return alert('A biblioteca de Excel não carregou (sem internet?).');
+  const R=repData(),T=R.T,wb=new ExcelJS.Workbook();wb.creator='Painel TLP';
+  const OR='FFFF7700',ZB='FFFFF1E0',bd={style:'thin',color:{argb:'FFD9D9D9'}},B={top:bd,left:bd,bottom:bd,right:bd},fill=a=>({type:'pattern',pattern:'solid',fgColor:{argb:a}}),now=new Date().toLocaleString('pt-BR');
+  function sheet(name,title,cols,rows){
+    const ws=wb.addWorksheet(name,{views:[{state:'frozen',ySplit:4,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+    ws.columns=cols.map(c=>({width:c[1]}));
+    ws.mergeCells(1,1,1,cols.length);const t=ws.getCell(1,1);t.value='TLP — '+title;t.font={size:16,bold:true,color:{argb:'FFFFFFFF'}};t.fill=fill('FF1E293B');t.alignment={vertical:'middle',indent:1};ws.getRow(1).height=32;
+    ws.mergeCells(2,1,2,cols.length);const s=ws.getCell(2,1);s.value=`Gerado em ${now}  •  Responsável: ${D.op||'—'}  •  ${rows.length} linha(s)`;s.font={italic:true,color:{argb:'FF64748B'}};
+    const h=ws.getRow(4);h.height=26;cols.forEach((c,i)=>{const x=h.getCell(i+1);x.value=c[0];x.font={bold:true,color:{argb:'FFFFFFFF'}};x.fill=fill(OR);x.alignment={horizontal:'center',vertical:'middle',wrapText:true};x.border=B});
+    rows.forEach((r,ri)=>{const row=ws.getRow(5+ri);r.forEach((v,i)=>{const x=row.getCell(i+1);x.value=v;x.border=B;x.alignment={vertical:'top',wrapText:true,horizontal:cols[i][2]||'left'};if(ri%2)x.fill=fill(ZB)})});
+    if(rows.length)ws.autoFilter={from:{row:4,column:1},to:{row:4,column:cols.length}};return ws}
+  const bold=(ws,idx,bg)=>idx.forEach(i=>ws.getRow(5+i).eachCell(c=>{c.font={bold:true};if(bg)c.fill=fill(bg)}));
+  // 1. Resumo
+  const rows=[],secs=[],S=t=>{secs.push(rows.length);rows.push([t,'',''])},tot=T.length;
+  S('▸ VISÃO GERAL');
+  rows.push(['Total de chamados',tot,''],['Em aberto (passagem de bastão)',R.open.length,pctS(R.open.length,tot)],['Finalizados (Tramitada / Encerrada)',R.fin.length,pctS(R.fin.length,tot)],
+    ['P1 em aberto',R.p1o.length,''],['P1 sem atualização há mais de 1h',R.br,''],['Tempo médio de tratamento (finalizados)',R.avg==null?'—':fmtM(R.avg),'medido desde o registro no painel'],
+    ['Chamados registrados nas últimas 24h',R.c24,''],['Finalizados nas últimas 24h',R.f24,'']);
+  S('▸ POR PRIORIDADE');PRI.forEach(p=>{const a=T.filter(x=>x.p==p).length;rows.push(['Prioridade '+p,a,T.filter(x=>x.p==p&&BASTAO.includes(x.res)).length+' em aberto'])});
+  S('▸ POR RESOLUÇÃO');RES.forEach(r=>{const a=T.filter(x=>x.res==r).length;rows.push([r,a,pctS(a,tot)])});
+  S('▸ SITES REINCIDENTES (END_ID com 2+ chamados)');
+  if(R.rein.length)R.rein.slice(0,15).forEach(e=>rows.push([e.end+(e.uf?' ('+e.uf+')':''),e.n,`${e.ab} em aberto • ${e.p1} P1`]));else rows.push(['Nenhum END_ID reincidente','','']);
+  const w1=sheet('Resumo','Resumo Executivo',[['Indicador',52],['Valor',16,'center'],['Detalhe',40]],rows);bold(w1,secs,'FFFFE0C2');
+  const nr=w1.rowCount+2;w1.mergeCells(nr,1,nr,3);const lb=w1.getCell(nr,1);lb.value='OBSERVAÇÕES DO TURNO';lb.font={bold:true,color:{argb:'FFFFFFFF'}};lb.fill=fill(OR);
+  w1.mergeCells(nr+1,1,nr+1,3);const nt=w1.getCell(nr+1,1);nt.value=D.nota||'Sem alterações relevantes.';nt.alignment={wrapText:true,vertical:'top'};nt.border=B;w1.getRow(nr+1).height=90;
+  // 2. Por UF
+  const ufs=[...new Set(T.map(x=>x.uf||'—'))].sort(),tm=L=>{const a=L.filter(x=>DONE.includes(x.res)&&x.cl&&x.c&&x.cl>=x.c).map(x=>x.cl-x.c);return a.length?fmtM(Math.round(a.reduce((p,q)=>p+q,0)/a.length/6e4)):'—'};
+  const ufRow=(l,L)=>{const f=L.filter(x=>DONE.includes(x.res)).length;return[l,L.length,L.length-f,f,L.length?f/L.length:0,L.filter(x=>x.p=='P1'&&BASTAO.includes(x.res)).length,L.filter(breach).length,L.filter(x=>x.p=='P2'&&BASTAO.includes(x.res)).length,tm(L)]};
+  const ur=ufs.map(u=>ufRow(u,T.filter(x=>(x.uf||'—')==u)));ur.push(ufRow('TOTAL',T));
+  const w2=sheet('Por UF','Visão por Estado (UF)',[['UF',10,'center'],['Total',11,'center'],['Em aberto',11,'center'],['Finalizados',12,'center'],['% finalizado',13,'center'],['P1 em aberto',13,'center'],['P1 fora do SLA',14,'center'],['P2 em aberto',13,'center'],['Tempo médio de tratamento',24,'center']],ur);
+  w2.getColumn(5).numFmt='0%';bold(w2,[ur.length-1],'FFFFE0C2');
+  // 3. Por operador
+  const O={};T.forEach(x=>(x.h||[]).forEach(e=>{const w=e.w||'(operador não informado)',o=O[w]||(O[w]={w,a:0,cr:0,al:0,en:0,rv:0,s:new Set(),i:e.t,f:e.t});o.a++;o.s.add(x.tsk);
+    if(e.k=='Criado')o.cr++;else if(e.k=='Revisado')o.rv++;else{o.al++;if(e.k=='Resolução'&&DONE.includes(e.b))o.en++}o.i=Math.min(o.i,e.t);o.f=Math.max(o.f,e.t)}));
+  const or=Object.values(O).sort((a,b)=>b.a-a.a).map(o=>[o.w,o.a,o.s.size,o.cr,o.al,o.en,o.rv,new Date(o.i),new Date(o.f)]);
+  const w3=sheet('Por Operador','Atividade por Operador',[['Operador',30],['Ações registradas',16,'center'],['Chamados distintos',16,'center'],['Chamados registrados',17,'center'],['Alterações de dados',17,'center'],['Encerrados / Tramitados',18,'center'],['Revisões (SLA)',14,'center'],['Primeira atividade',20,'center'],['Última atividade',20,'center']],or);
+  w3.getColumn(8).numFmt='dd/mm/yyyy hh:mm';w3.getColumn(9).numFmt='dd/mm/yyyy hh:mm';
+  // 4. Histórico completo
+  const hr=T.flatMap(x=>(x.h||[]).map(e=>({t:e.t,r:[new Date(e.t),x.tsk,x.end||'',x.uf||'',e.w||'',e.k||'',e.a??'',e.b??'']}))).sort((a,b)=>b.t-a.t).map(o=>o.r);
+  const w4=sheet('Histórico','Histórico completo de movimentações',[['Data/Hora',19,'center'],['TSK',22],['END_ID',16],['UF',8,'center'],['Operador',26],['Campo',16],['De',28],['Para / Detalhe',44]],hr);
+  w4.getColumn(1).numFmt='dd/mm/yyyy hh:mm';
+  const buf=await wb.xlsx.writeBuffer(),a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+  a.download=`Relatorio_Gerencial_TLP_${new Date().toISOString().slice(0,10)}.xlsx`;a.click();toast('📊 Excel gerencial gerado')}
+
+/* ---------- Bases e backup ---------- */
+const bases=()=>{try{return JSON.parse(localStorage.getItem('tlp_bases2')||'{}')}catch(e){return{}}};
+function saveBase(){const n=$('bn').value.trim();if(!n)return alert('Digite um nome.');const b=bases();b[n]={data:new Date().toLocaleString('pt-BR'),d:JSON.parse(JSON.stringify(D))};localStorage.setItem('tlp_bases2',JSON.stringify(b));$('bn').value='';renderBases()}
+function renderBases(){const b=bases();$('tbB').innerHTML=Object.keys(b).map(n=>`<tr><td><b>${esc(n)}</b></td><td>${b[n].data}</td><td>${b[n].d.t.length}</td><td><button class="btn b-g sm" data-n="${esc(n)}" onclick="loadBase(this.dataset.n)">📂 Carregar</button> <button class="btn b-r sm" data-n="${esc(n)}" onclick="delBase(this.dataset.n)">🗑️</button></td></tr>`).join('')||'<tr><td colspan="4" class="c">Nenhuma base guardada.</td></tr>'}
+function loadBase(n){const b=bases();if(b[n]){snap();D=Object.assign({t:[],nota:'',op:'',gn:''},b[n].d);norm();fields();save();toast('📂 Base carregada')}}
+function delBase(n){const b=bases();delete b[n];localStorage.setItem('tlp_bases2',JSON.stringify(b));renderBases()}
+function renderAuto(){try{const a=JSON.parse(localStorage.getItem('tlp_auto')||'{}');$('tbA').innerHTML=Object.keys(a).sort().reverse().map(k=>`<tr><td><b>${k.split('-').reverse().join('/')}</b></td><td>${a[k].s}</td><td>${a[k].d.t.length}</td><td><button class="btn b-g sm" onclick="loadAuto('${k}')">📂 Restaurar</button></td></tr>`).join('')||'<tr><td colspan="4" class="c">Nenhum backup ainda.</td></tr>'}catch(e){}}
+function loadAuto(k){const a=JSON.parse(localStorage.getItem('tlp_auto')||'{}');if(a[k]&&confirm('Restaurar este backup? Isso substitui os dados atuais (dá para desfazer com ↩️ enquanto a página estiver aberta).')){snap();D=Object.assign({t:[],nota:'',op:'',gn:''},JSON.parse(JSON.stringify(a[k].d)));norm();fields();save();toast('📂 Backup restaurado')}}
+function expJson(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({D,bases:bases()},null,2)],{type:'application/json'}));a.download=`Backup_TLP_${new Date().toISOString().slice(0,10)}.json`;a.click()}
+
+/* ---------- Geral ---------- */
+function fields(){$('op').value=D.op||'';$('nota').value=D.nota||'';$('gn').value=D.gn||''}
+function health(){const o=D.t.filter(x=>x.p=='P1'&&!DONE.includes(x.res)).length,b=D.t.filter(breach).length,h=$('health');h.className='badge '+(o?'bad':'ok');h.textContent=o?`🔴 ${o} P1 em aberto`+(b?` • ⏰ ${b} fora do SLA`:''):'🟢 Operação normal'}
+function renderAll(){renderT();renderTurno();health();undoBtn();if($('t3').classList.contains('active'))renderInfo()}
+
+$('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+  $(b.dataset.t).classList.add('active');b.classList.add('active');
+  if(b.dataset.t=='t3')renderInfo();if(b.dataset.t=='t5'){renderBases();renderAuto()}};
+const dz=$('drop');dz.onclick=()=>$('file').click();$('file').onchange=e=>impFile(e.target.files[0]);
+dz.ondragover=e=>e.preventDefault();dz.ondrop=e=>{e.preventDefault();impFile(e.dataTransfer.files[0])};
+$('bk').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const j=JSON.parse(ev.target.result);if(j.D){snap();D=Object.assign(D,j.D);norm()}if(j.bases)localStorage.setItem('tlp_bases2',JSON.stringify(j.bases));fields();save();renderBases();toast('📤 Backup importado')}catch(x){alert('JSON inválido.')}};r.readAsText(f)};
+
+$('fP').innerHTML=opts(PRI);$('fR').innerHTML=opts(RES);$('fp').innerHTML=opts(PRI,'Todas as prioridades');$('fr').innerHTML=opts(RES,'Todas as resoluções');$('ip').innerHTML=opts(PRI,'Todas as prioridades');
+setInterval(()=>{const n=new Date();$('clock').textContent=n.toLocaleDateString('pt-BR')+' '+n.toLocaleTimeString('pt-BR')},1000);
+setInterval(()=>{health();renderTurno();if(!document.activeElement.closest('#tb'))renderT()},30000);
+load();fields();lk();renderAll();
+</script>
+</body>
+</html>
